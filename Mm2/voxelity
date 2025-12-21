@@ -1,0 +1,503 @@
+--[[
+    VOXELITY - Murder Mystery 2
+    UI Designed by: AI
+    Credits: @valprobz & @nyxwwww on TT
+    Update: Fixed Amount Path & Menu Persistence
+]]
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+
+--// SAFE FONT SELECTION
+local function GetSafeFont(fontName, fallback)
+    local success, result = pcall(function() return Enum.Font[fontName] end)
+    if success and result then return result end
+    return fallback
+end
+
+local MainFont = GetSafeFont("GothamMedium", Enum.Font.SourceSans)
+local BoldFont = GetSafeFont("GothamBold", Enum.Font.SourceSansBold)
+
+--// UI CONFIGURATION
+local Config = {
+    Background = Color3.fromRGB(15, 15, 15),
+    HeaderColor = Color3.fromRGB(25, 25, 25),
+    ButtonColor = Color3.fromRGB(30, 30, 30), -- Dark Gray
+    Accent = Color3.fromRGB(255, 255, 255),
+    TextDim = Color3.fromRGB(180, 180, 180),
+    Success = Color3.fromRGB(100, 255, 100),
+    Warning = Color3.fromRGB(255, 200, 50),
+    Error = Color3.fromRGB(255, 80, 80),
+    Corner = UDim.new(0, 8)
+}
+
+--// PARENTING
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+if CoreGui:FindFirstChild("VoxelityMM2") then
+    CoreGui.VoxelityMM2:Destroy()
+elseif PlayerGui:FindFirstChild("VoxelityMM2") then
+    PlayerGui.VoxelityMM2:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "VoxelityMM2"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+pcall(function() ScreenGui.Parent = CoreGui end)
+if ScreenGui.Parent ~= CoreGui then ScreenGui.Parent = PlayerGui end
+
+--// DRAG FUNCTION
+local function MakeDraggable(trigger, object)
+    local dragging, dragInput, dragStart, startPos
+    trigger.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = object.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    trigger.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            TweenService:Create(object, TweenInfo.new(0.1), {Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)}):Play()
+        end
+    end)
+end
+
+--// LOADING SCREEN
+local LoadTitle = Instance.new("TextLabel")
+LoadTitle.Text = "VOXELITY"
+LoadTitle.Size = UDim2.new(0, 300, 0, 50)
+LoadTitle.AnchorPoint = Vector2.new(0.5, 0.5)
+LoadTitle.Position = UDim2.new(0.5, 0, 0.45, 0)
+LoadTitle.BackgroundTransparency = 1
+LoadTitle.TextColor3 = Config.Accent
+LoadTitle.Font = BoldFont
+LoadTitle.TextSize = 36
+LoadTitle.TextXAlignment = Enum.TextXAlignment.Center
+LoadTitle.TextTransparency = 1
+LoadTitle.Parent = ScreenGui
+
+local LoadSub = Instance.new("TextLabel")
+LoadSub.Text = "@valprobz & @nyxwwww on TT"
+LoadSub.Size = UDim2.new(0, 300, 0, 30)
+LoadSub.AnchorPoint = Vector2.new(0.5, 0.5)
+LoadSub.Position = UDim2.new(0.5, 0, 0.52, 0)
+LoadSub.BackgroundTransparency = 1
+LoadSub.TextColor3 = Config.TextDim
+LoadSub.Font = MainFont
+LoadSub.TextSize = 18
+LoadSub.TextXAlignment = Enum.TextXAlignment.Center
+LoadSub.TextTransparency = 1
+LoadSub.Parent = ScreenGui
+
+--// MAIN FRAME
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 400, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -160)
+MainFrame.BackgroundColor3 = Config.Background
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = Config.Corner
+MainCorner.Parent = MainFrame
+
+-- Header
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundColor3 = Config.HeaderColor
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = Config.Corner
+HeaderCorner.Parent = Header
+
+local HeaderCover = Instance.new("Frame")
+HeaderCover.Size = UDim2.new(1, 0, 0, 10)
+HeaderCover.Position = UDim2.new(0, 0, 1, -10)
+HeaderCover.BackgroundColor3 = Config.HeaderColor
+HeaderCover.BorderSizePixel = 0
+HeaderCover.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.Name = "TitleLabel"
+Title.Text = "Voxelity - Murder Mystery 2"
+Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Config.Accent
+Title.Font = BoldFont
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+-- Content Container
+local Container = Instance.new("Frame")
+Container.Size = UDim2.new(1, -20, 1, -45)
+Container.Position = UDim2.new(0, 10, 0, 40)
+Container.BackgroundTransparency = 1
+Container.Parent = MainFrame
+
+--// CHECK INVENTORY BUTTON
+local CheckInvBtn = Instance.new("TextButton")
+CheckInvBtn.Name = "CheckInvBtn"
+CheckInvBtn.Size = UDim2.new(1, 0, 0, 35)
+CheckInvBtn.BackgroundColor3 = Config.ButtonColor
+CheckInvBtn.Text = "Check Inventory"
+CheckInvBtn.TextColor3 = Config.Accent
+CheckInvBtn.Font = BoldFont
+CheckInvBtn.TextSize = 14
+CheckInvBtn.AutoButtonColor = false
+CheckInvBtn.Parent = Container
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 6)
+BtnCorner.Parent = CheckInvBtn
+
+--// DROPDOWN
+local DropdownContainer = Instance.new("Frame")
+DropdownContainer.Name = "DropdownContainer"
+DropdownContainer.Size = UDim2.new(1, 0, 0, 35)
+DropdownContainer.Position = UDim2.new(0, 0, 0, 45)
+DropdownContainer.BackgroundColor3 = Config.ButtonColor
+DropdownContainer.Visible = false
+DropdownContainer.ZIndex = 5
+DropdownContainer.Parent = Container
+
+local DropCorner = Instance.new("UICorner")
+DropCorner.CornerRadius = UDim.new(0, 6)
+DropCorner.Parent = DropdownContainer
+
+local DropdownBtn = Instance.new("TextButton")
+DropdownBtn.Size = UDim2.new(1, 0, 1, 0)
+DropdownBtn.BackgroundTransparency = 1
+DropdownBtn.Text = "Select Item..."
+DropdownBtn.TextColor3 = Config.TextDim
+DropdownBtn.Font = MainFont
+DropdownBtn.TextSize = 14
+DropdownBtn.ZIndex = 6
+DropdownBtn.Parent = DropdownContainer
+
+local DropList = Instance.new("ScrollingFrame")
+DropList.Name = "DropList"
+DropList.Size = UDim2.new(1, 0, 0, 120)
+DropList.Position = UDim2.new(0, 0, 1, 5)
+DropList.BackgroundColor3 = Config.HeaderColor
+DropList.Visible = false
+DropList.ScrollBarThickness = 2
+DropList.CanvasSize = UDim2.new(0, 0, 0, 0)
+DropList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+DropList.ZIndex = 10
+DropList.Parent = DropdownContainer
+
+local DropListCorner = Instance.new("UICorner")
+DropListCorner.CornerRadius = UDim.new(0, 6)
+DropListCorner.Parent = DropList
+
+local DropListLayout = Instance.new("UIListLayout")
+DropListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+DropListLayout.Padding = UDim.new(0, 2)
+DropListLayout.Parent = DropList
+
+--// DUPE BUTTON
+local DupeBtn = Instance.new("TextButton")
+DupeBtn.Name = "DupeBtn"
+DupeBtn.Size = UDim2.new(1, 0, 0, 35)
+DupeBtn.Position = UDim2.new(0, 0, 0, 90)
+DupeBtn.BackgroundColor3 = Config.ButtonColor
+DupeBtn.Text = "Dupe"
+DupeBtn.TextColor3 = Config.Accent
+DupeBtn.Font = BoldFont
+DupeBtn.TextSize = 14
+DupeBtn.AutoButtonColor = false
+DupeBtn.Visible = false
+DupeBtn.Parent = Container
+
+local DupeCorner = Instance.new("UICorner")
+DupeCorner.CornerRadius = UDim.new(0, 6)
+DupeCorner.Parent = DupeBtn
+
+--// LOG WINDOW
+local LogFrame = Instance.new("ScrollingFrame")
+LogFrame.Name = "LogFrame"
+LogFrame.Size = UDim2.new(1, 0, 1, -140)
+LogFrame.Position = UDim2.new(0, 0, 0, 135)
+LogFrame.BackgroundTransparency = 1
+LogFrame.BorderSizePixel = 0
+LogFrame.ScrollBarThickness = 2
+LogFrame.Parent = Container
+
+local LogLayout = Instance.new("UIListLayout")
+LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+LogLayout.Padding = UDim.new(0, 4)
+LogLayout.Parent = LogFrame
+
+--// TOGGLE BUTTON
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
+ToggleBtn.BackgroundColor3 = Config.Background
+ToggleBtn.Text = "V"
+ToggleBtn.TextColor3 = Config.Accent
+ToggleBtn.Font = BoldFont
+ToggleBtn.TextSize = 22
+ToggleBtn.Visible = false
+ToggleBtn.Parent = ScreenGui
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 12)
+ToggleCorner.Parent = ToggleBtn
+
+MakeDraggable(Header, MainFrame)
+MakeDraggable(ToggleBtn, ToggleBtn)
+
+--// LOGIC SYSTEM
+
+local FoundItems = {}
+local SelectedItemFrame = nil
+local CurrentAmount = 1
+local ItemsFoundCount = 0 -- Track this to persist menu state
+
+local function AddLog(text, color)
+    local Label = Instance.new("TextLabel")
+    Label.Text = "> " .. text
+    Label.TextColor3 = color or Config.TextDim
+    Label.Font = Enum.Font.Code
+    Label.TextSize = 12
+    Label.Size = UDim2.new(1, 0, 0, 16)
+    Label.BackgroundTransparency = 1
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = LogFrame
+end
+
+-- Scan Function
+local function ScanInventory()
+    FoundItems = {} 
+    ItemsFoundCount = 0
+    
+    -- Clear Dropdown
+    for _, child in pairs(DropList:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    
+    AddLog("Scanning Inventory...", Config.Accent)
+    
+    local success, err = pcall(function()
+        -- The MASTER Path
+        local MainGUI = PlayerGui:FindFirstChild("MainGUI")
+        local Lobby = MainGUI and MainGUI:FindFirstChild("Lobby")
+        local Screens = Lobby and Lobby:FindFirstChild("Screens")
+        local Inv = Screens and Screens:FindFirstChild("Inventory")
+        local Main = Inv and Inv:FindFirstChild("Main")
+        local Weapons = Main and Main:FindFirstChild("Weapons")
+        local Items = Weapons and Weapons:FindFirstChild("Items")
+        local Container = Items and Items:FindFirstChild("Container")
+        
+        if not Container then
+            AddLog("Error: Path not found.", Config.Error)
+            AddLog("Open Inventory & Click a Tab!", Config.Warning)
+            return
+        end
+        
+        -- The Categories to check
+        local Categories = {"Current", "Classic", "Holiday"}
+        
+        for _, catName in pairs(Categories) do
+            local catFolder = Container:FindFirstChild(catName)
+            if catFolder then
+                local innerContainer = catFolder:FindFirstChild("Container")
+                
+                if innerContainer then
+                    for _, itemFrame in pairs(innerContainer:GetChildren()) do
+                        if itemFrame:IsA("Frame") or itemFrame:IsA("ImageButton") then
+                            local nameFrame = itemFrame:FindFirstChild("ItemName")
+                            if nameFrame then
+                                local label = nameFrame:FindFirstChild("Label")
+                                if not label and nameFrame:IsA("TextLabel") then
+                                    label = nameFrame
+                                end
+                                
+                                if label and label:IsA("TextLabel") and label.Text ~= "" then
+                                    FoundItems[label.Text] = itemFrame
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    
+    if not success then
+        AddLog("Script Error: " .. tostring(err), Config.Error)
+    end
+    
+    -- Populate Dropdown
+    for name, frame in pairs(FoundItems) do
+        ItemsFoundCount = ItemsFoundCount + 1
+        
+        local ItemBtn = Instance.new("TextButton")
+        ItemBtn.Size = UDim2.new(1, 0, 0, 25)
+        ItemBtn.BackgroundColor3 = Config.Background 
+        ItemBtn.BackgroundTransparency = 0
+        ItemBtn.BorderSizePixel = 0
+        ItemBtn.Text = "  " .. name
+        ItemBtn.TextColor3 = Config.TextDim
+        ItemBtn.Font = MainFont
+        ItemBtn.TextSize = 12
+        ItemBtn.TextXAlignment = Enum.TextXAlignment.Left
+        ItemBtn.ZIndex = 15
+        ItemBtn.Parent = DropList
+        
+        ItemBtn.MouseButton1Click:Connect(function()
+            SelectedItemFrame = frame
+            DropdownBtn.Text = name
+            DropdownBtn.TextColor3 = Config.Accent
+            DropList.Visible = false
+            DupeBtn.Visible = true
+            CurrentAmount = 1 -- Reset count
+            AddLog("Selected: " .. name, Config.Success)
+            
+            TweenService:Create(DropdownContainer, TweenInfo.new(0.2), {BackgroundColor3 = Config.ButtonColor}):Play()
+        end)
+    end
+    
+    if ItemsFoundCount > 0 then
+        AddLog("Found " .. ItemsFoundCount .. " items!", Config.Success)
+        DropdownContainer.Visible = true
+    else
+        AddLog("No items found. Click Inventory Tabs!", Config.Warning)
+        DropdownContainer.Visible = false
+    end
+end
+
+-- Dupe Function (UPDATED PATH)
+DupeBtn.MouseButton1Click:Connect(function()
+    if not SelectedItemFrame then return end
+    
+    TweenService:Create(DupeBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}):Play()
+    task.wait(0.1)
+    TweenService:Create(DupeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Config.ButtonColor}):Play()
+    
+    CurrentAmount = CurrentAmount + 1
+    
+    -- SPECIFIC PATH REQUESTED: ItemFrame -> Container -> Amount
+    local innerContainer = SelectedItemFrame:FindFirstChild("Container")
+    local amountLabel = innerContainer and innerContainer:FindFirstChild("Amount")
+    
+    if amountLabel and amountLabel:IsA("TextLabel") then
+        amountLabel.Visible = true -- Force visible if hidden (game hides it if x1)
+        amountLabel.Text = "x" .. tostring(CurrentAmount)
+        AddLog("Duped " .. DropdownBtn.Text .. " to x" .. CurrentAmount, Config.Success)
+    else
+        -- If the specific path doesn't exist, we do nothing (No custom creation)
+        AddLog("Error: No 'Amount' label found in path.", Config.Error)
+    end
+end)
+
+CheckInvBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(CheckInvBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}):Play()
+    task.wait(0.1)
+    TweenService:Create(CheckInvBtn, TweenInfo.new(0.2), {BackgroundColor3 = Config.ButtonColor}):Play()
+    ScanInventory()
+end)
+
+DropdownBtn.MouseButton1Click:Connect(function()
+    DropList.Visible = not DropList.Visible
+end)
+
+--// UI TOGGLE LOGIC
+local UI_Open = true
+local Debounce = false
+
+local function ToggleUI(forceState)
+    if Debounce then return end
+    Debounce = true
+    
+    if forceState ~= nil then
+        UI_Open = forceState
+    else
+        UI_Open = not UI_Open
+    end
+    
+    if UI_Open then
+        MainFrame.Visible = true
+        MainFrame.Size = UDim2.new(0, 400, 0, 0)
+        
+        -- Hide contents first
+        for _, v in pairs(Container:GetChildren()) do
+            if v:IsA("GuiObject") then v.Visible = false end
+        end
+        
+        local openTween = TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 400, 0, 320),
+            BackgroundTransparency = 0
+        })
+        openTween:Play()
+        TweenService:Create(Header, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
+        openTween.Completed:Wait()
+        
+        -- Restore Visibility State
+        Container.Visible = true
+        for _, v in pairs(Container:GetChildren()) do
+            if v:IsA("GuiObject") then
+                if v == DropdownContainer then
+                    -- Show Dropdown only if items were found previously
+                    v.Visible = (ItemsFoundCount > 0)
+                elseif v == DupeBtn then
+                    -- Show DupeBtn only if item selected
+                    v.Visible = (SelectedItemFrame ~= nil)
+                elseif v.Name == "DropList" then
+                    -- Always keep list hidden until clicked
+                    v.Visible = false
+                else
+                    v.Visible = true
+                end
+            end
+        end
+        
+    else
+        local closeTween = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 400, 0, 0),
+            BackgroundTransparency = 1
+        })
+        TweenService:Create(Header, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        closeTween:Play()
+        closeTween.Completed:Wait()
+        MainFrame.Visible = false
+    end
+    Debounce = false
+end
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    ToggleUI()
+end)
+
+--// STARTUP
+task.spawn(function()
+    TweenService:Create(LoadTitle, TweenInfo.new(1), {TextTransparency = 0, Position = UDim2.new(0.5, 0, 0.42, 0)}):Play()
+    task.wait(0.5)
+    TweenService:Create(LoadSub, TweenInfo.new(1), {TextTransparency = 0, Position = UDim2.new(0.5, 0, 0.55, 0)}):Play()
+    task.wait(2.5)
+    TweenService:Create(LoadTitle, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+    TweenService:Create(LoadSub, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+    task.wait(0.6)
+    ToggleBtn.Visible = true
+    ToggleUI(true)
+end)
